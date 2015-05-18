@@ -219,6 +219,9 @@ void MX_GPIO_Init(void)
 /* StartDefaultTask function */
 void StartDefaultTask(void const * argument)
 {
+
+  HAL_UART_Transmit(&huart1, "StartTask\r\n", 11, 100000);
+
   /* init code for FATFS */
   MX_FATFS_Init();
 
@@ -226,7 +229,8 @@ void StartDefaultTask(void const * argument)
   /* Infinite loop */
   for(;;)
   {
-    osDelay(1);
+    osDelay(1000);
+	HAL_UART_Transmit(&huart1, "Tick\r\n", 6, 100000);
   }
   /* USER CODE END 5 */ 
 }
