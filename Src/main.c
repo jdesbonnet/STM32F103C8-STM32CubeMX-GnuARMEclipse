@@ -47,6 +47,7 @@ SPI_HandleTypeDef hspi1;
 UART_HandleTypeDef huart1;
 
 osThreadId defaultTaskHandle;
+osThreadId secondTaskHandle;
 
 /* USER CODE BEGIN PV */
 
@@ -58,6 +59,7 @@ static void MX_GPIO_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USART1_UART_Init(void);
 void StartDefaultTask(void const * argument);
+void StartSecondTask(void const * argument);
 
 /* USER CODE BEGIN PFP */
 
@@ -108,7 +110,10 @@ int main(void)
   /* Create the thread(s) */
   /* definition and creation of defaultTask */
   osThreadDef(defaultTask, StartDefaultTask, osPriorityNormal, 0, 128);
+  osThreadDef(secondTask, StartSecondTask, osPriorityNormal, 0, 128);
+
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+  secondTaskHandle = osThreadCreate(osThread(secondTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -233,6 +238,24 @@ void StartDefaultTask(void const * argument)
 	HAL_UART_Transmit(&huart1, "Tick\r\n", 6, 100000);
   }
   /* USER CODE END 5 */ 
+}
+
+void StartSecondTask(void const * argument)
+{
+
+  HAL_UART_Transmit(&huart1, "StartSecondTask\r\n", 11, 100000);
+
+  /* init code for FATFS */
+  MX_FATFS_Init();
+
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(950);
+	HAL_UART_Transmit(&huart1, "Tock\r\n", 6, 100000);
+  }
+  /* USER CODE END 5 */
 }
 
 #ifdef USE_FULL_ASSERT
