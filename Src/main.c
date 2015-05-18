@@ -87,6 +87,8 @@ int main(void)
   //MX_SPI1_Init();
   MX_USART1_UART_Init();
 
+	  HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
+
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -127,6 +129,8 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
+
+	  	  HAL_UART_Transmit(USART1, "HelloWorld\r\n", 12, 100000);
 
   /* USER CODE BEGIN 3 */
 
@@ -182,7 +186,7 @@ void MX_USART1_UART_Init(void)
 {
 
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 9600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
