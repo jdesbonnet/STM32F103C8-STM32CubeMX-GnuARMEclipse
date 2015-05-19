@@ -86,10 +86,12 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  //MX_SPI1_Init();
+  MX_SPI1_Init();
+  MX_GPIO_Init(); // again!
+
   MX_USART1_UART_Init();
 
-	  HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
+  HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
 
   /* USER CODE BEGIN 2 */
 
@@ -177,7 +179,8 @@ void MX_SPI1_Init(void)
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  //hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
   hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLED;
@@ -212,8 +215,21 @@ void MX_USART1_UART_Init(void)
 void MX_GPIO_Init(void)
 {
 
+  GPIO_InitTypeDef GPIO_InitStruct;
+
   /* GPIO Ports Clock Enable */
   __GPIOA_CLK_ENABLE();
+  //__GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_MEDIUM;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  // Test
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
 }
 
@@ -230,12 +246,27 @@ void StartDefaultTask(void const * argument)
   /* init code for FATFS */
   MX_FATFS_Init();
 
+  uint8_t buf[8];
+  buf[0] = 0x55;
+  buf[1] = 0xAA;
+  buf[2] = 0x32;
+
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
   {
     osDelay(1000);
 	HAL_UART_Transmit(&huart1, "Tick\r\n", 6, 100000);
+
+	// Seems NSS can't be driven automatically.
+	// https://goo.gl/47eadt
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+
+	HAL_SPI_Transmit(&hspi1, buf, 8, 100000);
+
+	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+
   }
   /* USER CODE END 5 */ 
 }
