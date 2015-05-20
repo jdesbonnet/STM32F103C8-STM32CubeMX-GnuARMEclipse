@@ -71,6 +71,9 @@ static void spi_init(void)
 
 static void spi_set_speed(enum sd_speed speed)
 {
+
+	printf ("spi_set_speed %d\r\n",speed);
+
 	/*
 	SPI_InitTypeDef spi;
 	int prescaler = SPI_BaudRatePrescaler_128;

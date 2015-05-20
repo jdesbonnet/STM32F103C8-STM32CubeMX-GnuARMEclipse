@@ -99,6 +99,10 @@ int main(void)
   DSTATUS dstatus;
   dstatus = disk_initialize(0);
 
+  printf ("disk_initialize(0)=%d\r\n",dstatus);
+
+
+
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -142,9 +146,6 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
-	  	  HAL_UART_Transmit(USART1, "HelloWorld\r\n", 12, 100000);
-
   /* USER CODE BEGIN 3 */
 
   }
@@ -255,11 +256,9 @@ uint8_t spi_txrx(uint8_t data)
 		;
 	return SPI_SD->DR;
 	*/
-	uint8_t txdata[2];
-	uint8_t rxdata[2];
-	txdata[0]=data;
-	HAL_SPI_TransmitReceive(&hspi1,txdata,rxdata,1,10000);
-	return rxdata[0];
+	uint8_t rxdata;
+	HAL_SPI_TransmitReceive(&hspi1,&data,&rxdata,1,10000);
+	return rxdata;
 }
 /* USER CODE BEGIN 4 */
 
@@ -274,10 +273,6 @@ void StartDefaultTask(void const * argument)
   /* init code for FATFS */
   //MX_FATFS_Init();
 
-  uint8_t buf[8];
-  buf[0] = 0x55;
-  buf[1] = 0xAA;
-  buf[2] = 0x32;
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
