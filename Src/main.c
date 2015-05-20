@@ -257,6 +257,7 @@ uint8_t spi_txrx(uint8_t data)
 	*/
 	uint8_t txdata[2];
 	uint8_t rxdata[2];
+	txdata[0]=data;
 	HAL_SPI_TransmitReceive(&hspi1,txdata,rxdata,1,10000);
 	return rxdata[0];
 }
@@ -288,11 +289,11 @@ void StartDefaultTask(void const * argument)
 	// Seems NSS can't be driven automatically.
 	// https://goo.gl/47eadt
 
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, buf, 8, 100000);
+	//HAL_SPI_Transmit(&hspi1, buf, 8, 100000);
 
-	HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
   }
   /* USER CODE END 5 */ 
