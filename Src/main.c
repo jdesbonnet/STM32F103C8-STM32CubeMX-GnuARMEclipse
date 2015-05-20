@@ -35,7 +35,8 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
-#include "fatfs.h"
+//#include "fatfs.h"
+#include "diskio.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -92,6 +93,11 @@ int main(void)
   MX_USART1_UART_Init();
 
   HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
+
+  printf ("Hello world using printf()\r\n");
+
+  DSTATUS dstatus;
+  dstatus = disk_initialize(0);
 
   /* USER CODE BEGIN 2 */
 
@@ -181,7 +187,7 @@ void MX_SPI1_Init(void)
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
   //hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
   hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64; // was 2
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLED;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
@@ -233,6 +239,27 @@ void MX_GPIO_Init(void)
 
 }
 
+void spi_cs_low () {
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+}
+void spi_cs_high () {
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+}
+uint8_t spi_txrx(uint8_t data)
+{
+	/* RXNE always happens after TXE, so if this function is used
+	 * we don't need to check for TXE */
+	/*
+	SPI_SD->DR = data;
+	while ((SPI_SD->SR & SPI_I2S_FLAG_RXNE) == 0)
+		;
+	return SPI_SD->DR;
+	*/
+	uint8_t txdata[2];
+	uint8_t rxdata[2];
+	HAL_SPI_TransmitReceive(&hspi1,txdata,rxdata,1,10000);
+	return rxdata[0];
+}
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -244,7 +271,7 @@ void StartDefaultTask(void const * argument)
   HAL_UART_Transmit(&huart1, "StartTask\r\n", 11, 100000);
 
   /* init code for FATFS */
-  MX_FATFS_Init();
+  //MX_FATFS_Init();
 
   uint8_t buf[8];
   buf[0] = 0x55;
@@ -277,7 +304,7 @@ void StartSecondTask(void const * argument)
   HAL_UART_Transmit(&huart1, "StartSecondTask\r\n", 11, 100000);
 
   /* init code for FATFS */
-  MX_FATFS_Init();
+  //MX_FATFS_Init();
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
