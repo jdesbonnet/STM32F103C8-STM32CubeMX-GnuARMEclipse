@@ -35,7 +35,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
-//#include "fatfs.h"
+#include "fatfs.h"
 #include "diskio.h"
 
 /* USER CODE BEGIN Includes */
@@ -271,7 +271,16 @@ void StartDefaultTask(void const * argument)
   HAL_UART_Transmit(&huart1, "StartTask\r\n", 11, 100000);
 
   /* init code for FATFS */
-  //MX_FATFS_Init();
+  MX_FATFS_Init();
+
+  FIL fil;
+  FRESULT fr;
+  fr=f_open(&fil,"/sd/test.txt", FA_WRITE);
+  if(fr) {
+	  printf ("Could not open file for write, error=%d\r\n",fr);
+  }
+  f_printf(&fil, "stuff to write to card...\r\n");
+  f_close(&fil);
 
 
   /* USER CODE BEGIN 5 */
