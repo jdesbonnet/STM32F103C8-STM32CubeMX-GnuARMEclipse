@@ -299,7 +299,7 @@ uint8_t spi_txrx(uint8_t data)
 	*/
 	uint8_t rxdata;
 	HAL_SPI_TransmitReceive(&hspi1,&data,&rxdata,1,10000);
-	printf ("spi_tx=%x,rx=%x\r\n", data, rxdata);
+	//printf ("spi_tx=%x,rx=%x\r\n", data, rxdata);
 	return rxdata;
 }
 /* USER CODE BEGIN 4 */

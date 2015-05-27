@@ -918,7 +918,7 @@ DSTATUS spidrv_disk_status(BYTE drv)
 }
 
 
-DRESULT spidrv_disk_read(BYTE drv, BYTE *buff, DWORD sector, UINT count) // was BYTE count
+DRESULT spidrv_disk_read(BYTE *buff, DWORD sector, UINT count) // was BYTE count
 {
 	int i;
 
@@ -931,7 +931,7 @@ DRESULT spidrv_disk_read(BYTE drv, BYTE *buff, DWORD sector, UINT count) // was 
 
 
 #if _READONLY == 0
-DRESULT spidrv_disk_write(BYTE drv, const BYTE *buff, DWORD sector, UINT count)  // was BYTE count
+DRESULT spidrv_disk_write(const BYTE *buff, DWORD sector, UINT count)  // was BYTE count
 {
 	int i;
 
@@ -945,7 +945,7 @@ DRESULT spidrv_disk_write(BYTE drv, const BYTE *buff, DWORD sector, UINT count) 
 
 
 
-DRESULT spidrv_disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
+DRESULT spidrv_disk_ioctl(BYTE ctrl, void *buff)
 {
 	switch (ctrl) {
 	case CTRL_SYNC:
