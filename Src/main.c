@@ -70,6 +70,29 @@ void StartSecondTask(void const * argument);
 
 /* USER CODE END 0 */
 
+DSTATUS spidrv_disk_initialize (BYTE pdrv);
+DSTATUS spidrv_disk_status (BYTE pdrv);
+DRESULT spidrv_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
+DRESULT spidrv_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
+DRESULT spidrv_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+
+Diskio_drvTypeDef USER_Driver =
+{
+		spidrv_disk_initialize,
+		spidrv_disk_status,
+		spidrv_disk_read,
+		#if _USE_WRITE == 1
+		spidrv_disk_write,
+		#endif /* _USE_WRITE == 1 */
+		#if _USE_IOCTL == 1
+		spidrv_disk_ioctl,
+		#endif
+};
+
+//???
+char mynewdiskPath[4]="0"; /* User logical drive path */
+FATFS myFatFs;
+
 int main(void)
 {
 
@@ -96,10 +119,28 @@ int main(void)
 
   printf ("Hello world using printf()\r\n");
 
-  DSTATUS dstatus;
-  dstatus = disk_initialize(0);
+  printf ("myFatFs->win.d8=%x\r\n", myFatFs.win.d8);
 
-  printf ("disk_initialize(0)=%d\r\n",dstatus);
+  //DSTATUS dstatus = spidrv_disk_initialize(0);
+
+  /* init code for FATFS */
+  MX_FATFS_Init();
+
+  FRESULT fr;
+
+
+  fr = f_mount(&myFatFs,  (TCHAR const*)"0", 1);
+  if(fr) {
+	  printf ("Could not mount FS, error=%d\r\n",fr);
+  }
+
+  FIL fil;
+  fr=f_open(&fil,"test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+  if(fr) {
+	  printf ("Could not open file for write, error=%d\r\n",fr);
+  }
+  f_printf(&fil, "stuff to write to card...\r\n");
+  f_close(&fil);
 
 
 
@@ -258,6 +299,7 @@ uint8_t spi_txrx(uint8_t data)
 	*/
 	uint8_t rxdata;
 	HAL_SPI_TransmitReceive(&hspi1,&data,&rxdata,1,10000);
+	printf ("spi_tx=%x,rx=%x\r\n", data, rxdata);
 	return rxdata;
 }
 /* USER CODE BEGIN 4 */
@@ -270,17 +312,7 @@ void StartDefaultTask(void const * argument)
 
   HAL_UART_Transmit(&huart1, "StartTask\r\n", 11, 100000);
 
-  /* init code for FATFS */
-  MX_FATFS_Init();
 
-  FIL fil;
-  FRESULT fr;
-  fr=f_open(&fil,"/sd/test.txt", FA_WRITE);
-  if(fr) {
-	  printf ("Could not open file for write, error=%d\r\n",fr);
-  }
-  f_printf(&fil, "stuff to write to card...\r\n");
-  f_close(&fil);
 
 
   /* USER CODE BEGIN 5 */

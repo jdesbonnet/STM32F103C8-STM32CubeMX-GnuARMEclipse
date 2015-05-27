@@ -527,6 +527,10 @@ static int sd_read_status(hwif *hw)
 /* 0xfe marks data start, then len bytes of data and crc16 */
 static int sd_get_data(hwif *hw, u8 *buf, int len)
 {
+	printf ("sd_get_data buf=%x, len=%d\r\n");
+	if (buf == 0) {
+		printf ("sd_get_data error: buf==0\r\n");
+	}
 	int tries = 20000;
 	u8 r;
 	u16 _crc16;
@@ -896,7 +900,7 @@ int sd_write(hwif* hw, u32 address,const u8 *buf)
 
 hwif hw;
 
-DSTATUS disk_initialize(BYTE drv)
+DSTATUS spidrv_disk_initialize(BYTE drv)
 {
 	if (hwif_init(&hw) == 0)
 		return 0;
@@ -905,7 +909,7 @@ DSTATUS disk_initialize(BYTE drv)
 }
 
 
-DSTATUS disk_status(BYTE drv)
+DSTATUS spidrv_disk_status(BYTE drv)
 {
 	if (hw.initialized)
 		return 0;
@@ -914,7 +918,7 @@ DSTATUS disk_status(BYTE drv)
 }
 
 
-DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
+DRESULT spidrv_disk_read(BYTE drv, BYTE *buff, DWORD sector, UINT count) // was BYTE count
 {
 	int i;
 
@@ -927,7 +931,7 @@ DRESULT disk_read(BYTE drv, BYTE *buff, DWORD sector, BYTE count)
 
 
 #if _READONLY == 0
-DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, BYTE count)
+DRESULT spidrv_disk_write(BYTE drv, const BYTE *buff, DWORD sector, UINT count)  // was BYTE count
 {
 	int i;
 
@@ -941,7 +945,7 @@ DRESULT disk_write(BYTE drv, const BYTE *buff, DWORD sector, BYTE count)
 
 
 
-DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
+DRESULT spidrv_disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
 {
 	switch (ctrl) {
 	case CTRL_SYNC:
@@ -970,12 +974,17 @@ DRESULT disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
  * [4:0]   - second/2 0..29
  * so... midnight 2009 is 0x3a000000
  */
+#ifdef FALSE
 DWORD get_fattime()
 {
+
 	int time = RTC_GetCounter();
 	int y, m, d;
 	epoch_days_to_date(time/DAY_SECONDS, &y, &m, &d);
 	time %= DAY_SECONDS;
 	return (y-1980)<<25 | m<<21 | d<<16 |
 		(time/3600)<<11 | (time/60%60)<<5 | (time/2%30);
+
+	return 0;
 }
+#endif
