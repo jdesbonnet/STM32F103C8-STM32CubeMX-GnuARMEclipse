@@ -35,7 +35,7 @@
 #include "fatfs.h"
 
 uint8_t retUSER;    /* Return value for USER */
-char USER_Path[4];  /* USER logical drive path */
+char USER_Path[4]="0";  /* USER logical drive path */
 
 /* USER CODE BEGIN Variables */
 

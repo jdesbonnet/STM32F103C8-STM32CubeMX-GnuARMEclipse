@@ -36,6 +36,7 @@
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
 #include "fatfs.h"
+#include "diskio.h"
 
 /* USER CODE BEGIN Includes */
 
@@ -69,6 +70,29 @@ void StartSecondTask(void const * argument);
 
 /* USER CODE END 0 */
 
+DSTATUS spidrv_disk_initialize (BYTE pdrv);
+DSTATUS spidrv_disk_status (BYTE pdrv);
+DRESULT spidrv_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
+DRESULT spidrv_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
+DRESULT spidrv_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+
+Diskio_drvTypeDef USER_Driver =
+{
+		spidrv_disk_initialize,
+		spidrv_disk_status,
+		spidrv_disk_read,
+		#if _USE_WRITE == 1
+		spidrv_disk_write,
+		#endif /* _USE_WRITE == 1 */
+		#if _USE_IOCTL == 1
+		spidrv_disk_ioctl,
+		#endif
+};
+
+//???
+char mynewdiskPath[4]="0"; /* User logical drive path */
+FATFS myFatFs;
+
 int main(void)
 {
 
@@ -86,10 +110,39 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  //MX_SPI1_Init();
+  MX_SPI1_Init();
+  MX_GPIO_Init(); // again!
+
   MX_USART1_UART_Init();
 
-	  HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
+  HAL_UART_Transmit( &huart1, (int8_t *)"HelloWorld\r\n", 12, 100000);
+
+  printf ("Hello world using printf()\r\n");
+
+  printf ("myFatFs->win.d8=%x\r\n", myFatFs.win.d8);
+
+  //DSTATUS dstatus = spidrv_disk_initialize(0);
+
+  /* init code for FATFS */
+  MX_FATFS_Init();
+
+  FRESULT fr;
+
+
+  fr = f_mount(&myFatFs,  (TCHAR const*)"0", 1);
+  if(fr) {
+	  printf ("Could not mount FS, error=%d\r\n",fr);
+  }
+
+  FIL fil;
+  fr=f_open(&fil,"test.txt", FA_CREATE_ALWAYS | FA_WRITE);
+  if(fr) {
+	  printf ("Could not open file for write, error=%d\r\n",fr);
+  }
+  f_printf(&fil, "stuff to write to card...\r\n");
+  f_close(&fil);
+
+
 
   /* USER CODE BEGIN 2 */
 
@@ -134,9 +187,6 @@ int main(void)
   while (1)
   {
   /* USER CODE END WHILE */
-
-	  	  HAL_UART_Transmit(USART1, "HelloWorld\r\n", 12, 100000);
-
   /* USER CODE BEGIN 3 */
 
   }
@@ -177,8 +227,9 @@ void MX_SPI1_Init(void)
   hspi1.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
   hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
+  //hspi1.Init.NSS = SPI_NSS_HARD_OUTPUT;
+  hspi1.Init.NSS = SPI_NSS_SOFT;
+  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_64; // was 2
   hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi1.Init.TIMode = SPI_TIMODE_DISABLED;
   hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLED;
@@ -212,11 +263,45 @@ void MX_USART1_UART_Init(void)
 void MX_GPIO_Init(void)
 {
 
+  GPIO_InitTypeDef GPIO_InitStruct;
+
   /* GPIO Ports Clock Enable */
   __GPIOA_CLK_ENABLE();
+  //__GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin : PA4 */
+  GPIO_InitStruct.Pin = GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Speed = GPIO_SPEED_MEDIUM;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  // Test
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
 
 }
 
+void spi_cs_low () {
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+}
+void spi_cs_high () {
+	  HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+}
+uint8_t spi_txrx(uint8_t data)
+{
+	/* RXNE always happens after TXE, so if this function is used
+	 * we don't need to check for TXE */
+	/*
+	SPI_SD->DR = data;
+	while ((SPI_SD->SR & SPI_I2S_FLAG_RXNE) == 0)
+		;
+	return SPI_SD->DR;
+	*/
+	uint8_t rxdata;
+	HAL_SPI_TransmitReceive(&hspi1,&data,&rxdata,1,10000);
+	//printf ("spi_tx=%x,rx=%x\r\n", data, rxdata);
+	return rxdata;
+}
 /* USER CODE BEGIN 4 */
 
 /* USER CODE END 4 */
@@ -227,8 +312,8 @@ void StartDefaultTask(void const * argument)
 
   HAL_UART_Transmit(&huart1, "StartTask\r\n", 11, 100000);
 
-  /* init code for FATFS */
-  MX_FATFS_Init();
+
+
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
@@ -236,6 +321,16 @@ void StartDefaultTask(void const * argument)
   {
     osDelay(1000);
 	HAL_UART_Transmit(&huart1, "Tick\r\n", 6, 100000);
+
+	// Seems NSS can't be driven automatically.
+	// https://goo.gl/47eadt
+
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_RESET);
+
+	//HAL_SPI_Transmit(&hspi1, buf, 8, 100000);
+
+	//HAL_GPIO_WritePin(GPIOA, GPIO_PIN_4, GPIO_PIN_SET);
+
   }
   /* USER CODE END 5 */ 
 }
@@ -246,7 +341,7 @@ void StartSecondTask(void const * argument)
   HAL_UART_Transmit(&huart1, "StartSecondTask\r\n", 11, 100000);
 
   /* init code for FATFS */
-  MX_FATFS_Init();
+  //MX_FATFS_Init();
 
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
